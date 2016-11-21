@@ -22,6 +22,8 @@
 package haxelib.client;
 
 import sys.FileSystem;
+import sys.io.File;
+
 using haxelib.client.Vcs;
 
 interface IVcs {
@@ -134,7 +136,7 @@ class Vcs implements IVcs {
 		switch (commandResult) {
 			case {code: 0}: //pass
 			case {code: code, out:out}:
-				if (!settings.debug) 
+				if (!settings.debug)
 					Sys.stderr().writeString(out);
 				Sys.exit(code);
 		}
@@ -193,6 +195,85 @@ class Vcs implements IVcs {
 
 	public function update(libName:String):Bool {
 		throw "This method must be overriden.";
+	}
+
+	public static inline function useVcs(haxelib:Main, id:VcsID, fn:Vcs->Void):Void {
+		// Prepare check vcs.available:
+		var vcs = Vcs.get(id, haxelib.settings);
+		if(vcs == null || !vcs.available)
+			throw 'Could not use $id, please make sure it is installed and available in your PATH.';
+		return fn(vcs);
+	}
+
+	public static function doVcsInstall(h:Main, rep:String, vcs:Vcs, libName:String, url:String, branch:String, subDir:String, version:String) {
+
+		var proj = rep + Data.safe(libName);
+
+		var libPath = proj + "/" + vcs.directory;
+
+		var jsonPath = libPath + "/haxelib.json";
+
+		if ( FileSystem.exists(proj + "/" + Data.safe(vcs.directory)) ) {
+			Cli.print("You already have "+libName+" version "+vcs.directory+" installed.");
+
+			var wasUpdated = h.alreadyUpdatedVcsDependencies.exists(libName);
+			var currentBranch = if (wasUpdated) h.alreadyUpdatedVcsDependencies.get(libName) else null;
+
+			if (branch != null && (!wasUpdated || (wasUpdated && currentBranch != branch))
+				&& Cli.ask("Overwrite branch: " + (currentBranch == null?"<unspecified>":"\"" + currentBranch + "\"") + " with \"" + branch + "\""))
+			{
+				FsUtils.deleteRec(libPath);
+				h.alreadyUpdatedVcsDependencies.set(libName, branch);
+			}
+			else
+			{
+				if (!wasUpdated)
+				{
+					Cli.print("Updating " + libName+" version " + vcs.directory + " ...");
+					h.alreadyUpdatedVcsDependencies.set(libName, branch);
+					haxelib.client.commands.Update.updateByName(h, rep, libName);
+					h.setCurrent(rep, libName, vcs.directory, true);
+
+					if(FileSystem.exists(jsonPath))
+						haxelib.client.commands.Install.doInstallDependencies(h, rep, Data.readData(File.getContent(jsonPath), false).dependencies);
+				}
+				return;
+			}
+		}
+
+		Cli.print("Installing " +libName + " from " +url + ( branch != null ? " branch: " + branch : "" ));
+
+		try {
+			vcs.clone(libPath, url, branch, version);
+		} catch(error:VcsError) {
+			FsUtils.deleteRec(libPath);
+			var message = switch(error) {
+				case VcsUnavailable(vcs):
+					'Could not use ${vcs.executable}, please make sure it is installed and available in your PATH.';
+				case CantCloneRepo(vcs, repo, stderr):
+					'Could not clone ${vcs.name} repository' + (stderr != null ? ":\n" + stderr : ".");
+				case CantCheckoutBranch(vcs, branch, stderr):
+					'Could not checkout branch, tag or path "$branch": ' + stderr;
+				case CantCheckoutVersion(vcs, version, stderr):
+					'Could not checkout tag "$version": ' + stderr;
+			};
+			throw message;
+		}
+
+		// finish it!
+		if (subDir != null) {
+			libPath += "/" + subDir;
+			File.saveContent(proj + "/.dev", libPath);
+			Cli.print("Development directory set to "+libPath);
+		} else {
+			File.saveContent(proj + "/.current", vcs.directory);
+			Cli.print("Library "+libName+" current version is now "+vcs.directory);
+		}
+
+		h.alreadyUpdatedVcsDependencies.set(libName, branch);
+
+		if(FileSystem.exists(jsonPath))
+			haxelib.client.commands.Install.doInstallDependencies(h, rep, Data.readData(File.getContent(jsonPath), false).dependencies);
 	}
 }
 
@@ -286,7 +367,7 @@ class Git extends Vcs {
 
 
 		Sys.setCwd(libPath);
-		
+
 		if (version != null && version != "") {
 			var ret = command(executable, ["checkout", "tags/" + version]);
 			if (ret.code != 0)

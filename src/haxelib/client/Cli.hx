@@ -21,6 +21,8 @@
  */
 package haxelib.client;
 
+import haxe.crypto.Md5;
+
 class Cli {
 	public static var defaultAnswer:Null<Bool>;
 
@@ -42,5 +44,64 @@ class Cli {
 			}
 		}
 		return false;
+	}
+
+	inline public static function print (str:String) {
+		Sys.println(str);
+	}
+
+	var args : Array<String>;
+	var argcur : Int;
+
+	public function new (args:Array<String>) {
+		this.args = args;
+		argcur = 0;
+	}
+
+	public function param (name, ?passwd) {
+		if (args.length > argcur)
+			return args[argcur++];
+		Sys.print(name+" : ");
+		if (passwd) {
+			var s = new StringBuf();
+			do switch Sys.getChar(false) {
+				case 10, 13: break;
+				case c: s.addChar(c);
+			}
+			while (true);
+			Cli.print("");
+			return s.toString();
+		}
+		return Sys.stdin().readLine();
+	}
+
+	public function paramOpt() {
+		if (args.length > argcur)
+			return args[argcur++];
+		return null;
+	}
+
+	public function readPassword (site, user:String, prompt = "Password"):String {
+		var password = Md5.encode(param(prompt,true));
+		var attempts = 5;
+		while (!site.checkPassword(user, password)) {
+			Cli.print('Invalid password for $user');
+			if (--attempts == 0)
+				throw 'Failed to input correct password';
+			password = Md5.encode(param('$prompt ($attempts more attempt${attempts == 1 ? "" : "s"})', true));
+		}
+		return password;
+	}
+
+	public function hasNext () {
+		return argcur < args.length;
+	}
+
+	public function next () {
+		return args[argcur++];
+	}
+
+	public function reset () {
+		argcur = 0;
 	}
 }

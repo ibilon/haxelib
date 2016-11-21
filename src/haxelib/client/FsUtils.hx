@@ -22,7 +22,10 @@
 package haxelib.client;
 
 import haxe.io.Path;
+import haxe.zip.*;
 import sys.FileSystem;
+import sys.io.File;
+
 using StringTools;
 
 class FsUtils {
@@ -128,4 +131,30 @@ class FsUtils {
         try FileSystem.fullPath(path) catch (error:String) if (error == "std@file_full_path") errors++;
         return errors == 2;
     }
+
+    public static function zipDirectory(root:String):List<Entry> {
+		var ret = new List<Entry>();
+		function seek(dir:String) {
+			for (name in FileSystem.readDirectory(dir)) if (!name.startsWith('.')) {
+				var full = '$dir/$name';
+				if (FileSystem.isDirectory(full)) seek(full);
+				else {
+					var blob = File.getBytes(full);
+					var entry:Entry = {
+						fileName: full.substr(root.length+1),
+						fileSize : blob.length,
+						fileTime : FileSystem.stat(full).mtime,
+						compressed : false,
+						dataSize : blob.length,
+						data : blob,
+						crc32: haxe.crypto.Crc32.make(blob),
+					};
+					Tools.compress(entry, 9);
+					ret.push(entry);
+				}
+			}
+		}
+		seek(root);
+		return ret;
+	}
 }

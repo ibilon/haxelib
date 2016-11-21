@@ -1,0 +1,3 @@
+[submodule "libs/compiletime"]
+	path = libs/compiletime
+	url = https://github.com/jasononeil/compiletime.git

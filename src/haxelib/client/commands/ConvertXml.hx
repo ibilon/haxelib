@@ -1,29 +1,37 @@
-/*
- * Copyright (C)2005-2016 Haxe Foundation
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- */
-package haxelib.client;
+package haxelib.client.commands;
 
 import haxe.Json;
+import sys.FileSystem;
+import sys.io.File;
 
-class ConvertXml {
+import haxelib.client.Cli;
+import haxelib.client.Command;
+
+class ConvertXml implements Command {
+	public var name : String = "convertxml";
+	public var alias : Array<String> = [];
+	public var help : String = "convert haxelib.xml file to haxelib.json";
+	public var category : CommandCategory = Miscellaneous;
+	public var net : Bool = false;
+
+	public function run (haxelib:Main) : Void {
+		var cwd = Sys.getCwd();
+		var xmlFile = cwd + "haxelib.xml";
+		var jsonFile = cwd + "haxelib.json";
+
+		if (!FileSystem.exists(xmlFile)) {
+			Cli.print('No `haxelib.xml` file was found in the current directory.');
+			Sys.exit(0);
+		}
+
+		var xmlString = File.getContent(xmlFile);
+		var json = ConvertXml.convert(xmlString);
+		var jsonString = ConvertXml.prettyPrint(json);
+
+		File.saveContent(jsonFile, jsonString);
+		Cli.print('Saved to $jsonFile');
+	}
+
 	public static function convert(inXml:String) {
 		// Set up the default JSON structure
 		var json = {
