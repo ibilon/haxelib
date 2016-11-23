@@ -15,16 +15,16 @@ class Proxy implements Command {
 	public var net : Bool = true;
 
 	public function run (haxelib:Main) : Void {
-		var rep = haxelib.getRepository();
 		var host = haxelib.cli.param("Proxy host");
-		if( host == "" ) {
-			if( FileSystem.exists(rep + "/.proxy") ) {
-				FileSystem.deleteFile(rep + "/.proxy");
+
+		if (host == "") {
+			if (disableProxy(haxelib)) {
 				Cli.print("Proxy disabled");
 			} else
 				Cli.print("No proxy specified");
 			return;
 		}
+
 		var port = Std.parseInt(haxelib.cli.param("Proxy port"));
 		var authName = haxelib.cli.param("Proxy user login");
 		var authPass = authName == "" ? "" : haxelib.cli.param("Proxy user pass");
@@ -33,13 +33,34 @@ class Proxy implements Command {
 			port : port,
 			auth : authName == "" ? null : { user : authName, pass : authPass },
 		};
-		Http.PROXY = proxy;
+
 		Cli.print("Testing proxy...");
-		try Http.requestUrl("http://www.google.com") catch( e : Dynamic ) {
+		if (doProxy(haxelib, proxy)) {
+			Cli.print("Proxy setup done");
+		} else {
 			Cli.print("Proxy connection failed");
-			return;
 		}
+	}
+
+	public static function disableProxy (haxelib:Main) : Bool {
+		var rep = haxelib.getRepository();
+
+		if( FileSystem.exists(rep + "/.proxy") ) {
+			FileSystem.deleteFile(rep + "/.proxy");
+			return true;
+		} else
+			return false;
+	}
+
+	public static function doProxy (haxelib:Main, proxy) : Bool {
+		var rep = haxelib.getRepository();
+		Http.PROXY = proxy;
+
+		try Http.requestUrl("http://www.google.com") catch( e : Dynamic ) {
+			return false;
+		}
+
 		File.saveContent(rep + "/.proxy", haxe.Serializer.run(proxy));
-		Cli.print("Proxy setup done");
+		return true;
 	}
 }

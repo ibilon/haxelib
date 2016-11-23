@@ -15,21 +15,33 @@ class ConvertXml implements Command {
 	public var net : Bool = false;
 
 	public function run (haxelib:Main) : Void {
+		var jsonFile = try {
+			doConvert();
+		} catch (e:String) {
+			Cli.print(e);
+			Sys.exit(1);
+			null;
+		}
+
+		Cli.print('Saved to $jsonFile');
+	}
+
+	public static function doConvert () : String {
 		var cwd = Sys.getCwd();
 		var xmlFile = cwd + "haxelib.xml";
 		var jsonFile = cwd + "haxelib.json";
 
 		if (!FileSystem.exists(xmlFile)) {
-			Cli.print('No `haxelib.xml` file was found in the current directory.');
-			Sys.exit(0);
+			throw "No `haxelib.xml` file was found in the current directory.";
 		}
 
 		var xmlString = File.getContent(xmlFile);
-		var json = ConvertXml.convert(xmlString);
-		var jsonString = ConvertXml.prettyPrint(json);
+		var json = convert(xmlString);
+		var jsonString = prettyPrint(json);
 
 		File.saveContent(jsonFile, jsonString);
-		Cli.print('Saved to $jsonFile');
+
+		return jsonFile;
 	}
 
 	public static function convert(inXml:String) {

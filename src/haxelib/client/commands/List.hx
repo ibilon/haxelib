@@ -13,9 +13,18 @@ class List implements Command {
 	public var net : Bool = false;
 
 	public function run (haxelib:Main) : Void {
+		var filter = haxelib.cli.paramOpt();
+		var list = doList(haxelib, filter);
+
+		for (p in list) {
+			Cli.print(p);
+		}
+	}
+
+	public static function doList (haxelib:Main, filter:String) {
 		var rep = haxelib.getRepository();
 		var folders = FileSystem.readDirectory(rep);
-		var filter = haxelib.cli.paramOpt();
+
 		if ( filter != null )
 			folders = folders.filter( function (f) return f.toLowerCase().indexOf(filter.toLowerCase()) > -1 );
 		var all = [];
@@ -61,8 +70,7 @@ class List implements Command {
 			all.push(Data.unsafe(p) + ": "+versions.join(" "));
 		}
 		all.sort(function(s1, s2) return Reflect.compare(s1.toLowerCase(), s2.toLowerCase()));
-		for (p in all) {
-			Cli.print(p);
-		}
+
+		return all;
 	}
 }

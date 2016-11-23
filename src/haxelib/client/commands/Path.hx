@@ -16,20 +16,35 @@ class Path implements Command {
 	public var net : Bool = false;
 
 	public function run (haxelib:Main) : Void {
-		var rep = haxelib.getRepository();
-		var list = [];
+		var libraries = [];
 		for (a in haxelib.cli) {
 			var a = a.split(":");
-			haxelib.checkRec(rep, a[0], a[1], list);
+			libraries.push({ project: a[0], version: a[1] });
 		}
+
+		for (l in doPath(haxelib, libraries)) {
+			Cli.print(l);
+		}
+	}
+
+	public static function doPath (haxelib:Main, libraries:Array<{ project:String, version:String }>) : Array<String> {
+		var rep = haxelib.getRepository();
+
+		var list = [];
+		for (l in libraries) {
+			haxelib.checkRec(rep, l.project, l.version, list);
+		}
+
+		var r = [];
 		for( d in list ) {
+			var s = "";
 			var ndir = d.dir + "ndll";
 			if (FileSystem.exists(ndir))
-				Sys.print('-L $ndir/');
+				s += '-L $ndir/';
 
 			try {
 				var f = File.getContent(d.dir + "extraParams.hxml");
-				Cli.print(f.trim());
+				s += f.trim() + "\n";
 			} catch(_:Dynamic) {}
 
 			var dir = d.dir;
@@ -37,9 +52,11 @@ class Path implements Command {
 				var cp = d.info.classPath;
 				dir = haxe.io.Path.addTrailingSlash( d.dir + cp );
 			}
-			Cli.print(dir);
+			s += dir + "\n";
 
-			Cli.print("-D " + d.project + "="+d.info.version);
+			s += "-D " + d.project + "=" + d.info.version + "\n";
+			r.push(s);
 		}
+		return r;
 	}
 }

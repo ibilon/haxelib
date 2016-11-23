@@ -16,33 +16,49 @@ class Dev implements Command {
 	public var net : Bool = false;
 
 	public function run (haxelib:Main) : Void {
-		var rep = haxelib.getRepository();
 		var project = haxelib.cli.param("Library");
 		var dir = haxelib.cli.paramOpt();
+
+		try {
+			doDev(haxelib, project, dir);
+		} catch (e:String) {
+			Cli.print(e);
+			Sys.exit(1);
+		}
+
+		if (dir != null) {
+			Cli.print('Development directory set to $dir');
+		} else {
+			Cli.print("Development directory disabled");
+		}
+	}
+
+	public static function doDev (haxelib:Main, project:String, dir:String) {
+		var rep = haxelib.getRepository();
 		var proj = rep + Data.safe(project);
-		if( !FileSystem.exists(proj) ) {
+		var devfile = proj+"/.dev";
+
+		if (!FileSystem.exists(proj)) {
 			FileSystem.createDirectory(proj);
 		}
-		var devfile = proj+"/.dev";
-		if( dir == null ) {
-			if( FileSystem.exists(devfile) )
+
+		if (dir == null) {
+			if (FileSystem.exists(devfile))
 				FileSystem.deleteFile(devfile);
-			Cli.print("Development directory disabled");
 		}
 		else {
 			while ( dir.endsWith("/") || dir.endsWith("\\") ) {
 				dir = dir.substr(0,-1);
 			}
 			if (!FileSystem.exists(dir)) {
-				Cli.print('Directory $dir does not exist');
+				throw 'Directory $dir does not exist';
 			} else {
 				dir = FileSystem.fullPath(dir);
 				try {
 					File.saveContent(devfile, dir);
-					Cli.print("Development directory set to "+dir);
 				}
 				catch (e:Dynamic) {
-					Cli.print('Could not write to $devfile');
+					throw 'Could not write to $devfile';
 				}
 			}
 

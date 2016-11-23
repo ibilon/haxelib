@@ -21,12 +21,10 @@
  */
 package haxelib.client;
 
-import haxe.crypto.Md5;
 import haxe.*;
 import haxe.io.Path;
 import sys.io.File;
 import sys.FileSystem;
-import sys.io.*;
 import haxe.ds.Option;
 import haxelib.client.Cli.ask;
 import haxelib.client.FsUtils.*;
@@ -54,6 +52,7 @@ class Main {
 	public var cli : Cli;
 	public var site : SiteProxy;
 	public var commands : Array<Command>;
+	public var providers : Array<Provider>;
 	public var siteUrl : String;
 	public var isHaxelibRun : Bool;
 	public var alreadyUpdatedVcsDependencies : Map<String,String> = new Map<String,String>();
@@ -67,6 +66,9 @@ class Main {
 
 		CompileTime.importPackage("haxelib.client.commands");
 		commands = [for (c in CompileTime.getAllClasses(Command)) Type.createInstance(c, [])];
+
+		CompileTime.importPackage("haxelib.client.providers");
+		providers = [for (c in CompileTime.getAllClasses(Provider)) Type.createInstance(c, [])];
 
 		cli = new Cli(args);
 	}
@@ -91,7 +93,7 @@ class Main {
 		always : "answer all questions with yes",
 		never  : "answer all questions with no",
 		system : "run bundled haxelib version instead of latest update",
-	}
+	};
 
 	public var settings: {
 		debug  : Bool,
@@ -180,7 +182,7 @@ class Main {
 					settings.quiet = true;
 				case parseSwitch(_) => Some(s):
 					if (!Reflect.hasField(settings, s)) {
-						Cli.print('Unknown switch $a');
+						Cli.print('Unknown flag $a');
 						Sys.exit(1);
 					}
 					Reflect.setField(settings, s, true);
@@ -194,7 +196,7 @@ class Main {
 			var rep = try getGlobalRepository() catch (_:Dynamic) null;
 			if (rep != null && FileSystem.exists(rep + HAXELIB_LIBNAME)) {
 				cli.reset(); // send all arguments
-				haxelib.client.commands.Run.doRun(this, rep, HAXELIB_LIBNAME, null);
+				haxelib.client.commands.Run.doRun(this, rep, HAXELIB_LIBNAME);
 				return;
 			}
 		}

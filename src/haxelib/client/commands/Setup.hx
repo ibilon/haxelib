@@ -15,11 +15,7 @@ class Setup implements Command {
 	public var net : Bool = false;
 
 	public function run (haxelib:Main) : Void {
-		var rep = try haxelib.getGlobalRepositoryPath() catch (_:Dynamic) null;
-		if (rep == null)
-			rep = haxelib.getSuggestedGlobalRepositoryPath();
-
-		var configFile = haxelib.getConfigFile();
+		var rep = getGlobalRepositoryPathOrSuggested(haxelib);
 
 		if (!haxelib.cli.hasNext()) {
 			Cli.print("Please enter haxelib repository path with write access");
@@ -30,6 +26,25 @@ class Setup implements Command {
 		if (line != "")
 			rep = line;
 
+		try {
+			doSetup(haxelib, rep);
+		} catch (e:String) {
+			Cli.print(e);
+			Sys.exit(1);
+		}
+
+		Cli.print("haxelib repository is now " + rep);
+	}
+
+	public static function getGlobalRepositoryPathOrSuggested (haxelib:Main) : String {
+		var rep = try haxelib.getGlobalRepositoryPath() catch (_:Dynamic) null;
+		if (rep == null)
+			rep = haxelib.getSuggestedGlobalRepositoryPath();
+		return rep;
+	}
+
+	public static function doSetup (haxelib:Main, rep:String) {
+		var configFile = haxelib.getConfigFile();
 		rep = try FileSystem.fullPath(rep) catch (_:Dynamic) rep;
 
 		if (FsUtils.isSamePath(rep, configFile))
@@ -37,7 +52,5 @@ class Setup implements Command {
 
 		FsUtils.safeDir(rep);
 		File.saveContent(configFile, rep);
-
-		Cli.print("haxelib repository is now " + rep);
 	}
 }

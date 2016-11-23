@@ -14,7 +14,7 @@ class Info implements Command {
 
 	public function run (haxelib:Main) : Void {
 		var prj = haxelib.cli.param("Library name");
-		var inf = haxelib.site.infos(prj);
+		var inf = getInfos(haxelib, prj);
 		Cli.print("Name: "+inf.name);
 		Cli.print("Tags: "+inf.tags.join(", "));
 		Cli.print("Desc: "+inf.desc);
@@ -27,5 +27,9 @@ class Info implements Command {
 			Cli.print("  (no version released yet)");
 		for( v in inf.versions )
 			Cli.print("   "+v.date+" "+v.name+" : "+v.comments);
+	}
+
+	public static function getInfos (haxelib:Main, library:String) {
+		return haxelib.site.infos(library);
 	}
 }

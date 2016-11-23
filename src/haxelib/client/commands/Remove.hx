@@ -17,21 +17,31 @@ class Remove implements Command {
 	public var net : Bool = false;
 
 	public function run (haxelib:Main) : Void {
-		var rep = haxelib.getRepository();
 		var prj = haxelib.cli.param("Library");
 		var version = haxelib.cli.paramOpt();
+
+		try {
+			doRemove(haxelib, prj, version);
+		} catch (e:String) {
+			Cli.print(e);
+			Sys.exit(1);
+		}
+
+		Cli.print("Library "+prj+" version "+version+" removed");
+	}
+
+	public static function doRemove (haxelib:Main, prj:String, version:String) {
+		var rep = haxelib.getRepository();
 		var pdir = rep + Data.safe(prj);
 		if( version == null ) {
 			if( !FileSystem.exists(pdir) )
 				throw "Library "+prj+" is not installed";
 
 			if (prj == Main.HAXELIB_LIBNAME && haxelib.isHaxelibRun) {
-				Cli.print('Error: Removing "${Main.HAXELIB_LIBNAME}" requires the --system flag');
-				Sys.exit(1);
+				throw 'Error: Removing "${Main.HAXELIB_LIBNAME}" requires the --system flag';
 			}
 
 			FsUtils.deleteRec(pdir);
-			Cli.print("Library "+prj+" removed");
 			return;
 		}
 
@@ -46,6 +56,5 @@ class Remove implements Command {
 		if( dev == vdir )
 			throw "Can't remove dev version of library "+prj;
 		FsUtils.deleteRec(vdir);
-		Cli.print("Library "+prj+" version "+version+" removed");
 	}
 }

@@ -12,9 +12,14 @@ class Search implements Command {
 
 	public function run (haxelib:Main) : Void {
 		var word = haxelib.cli.param("Search word");
-		var l = haxelib.site.search(word);
-		for( s in l )
-			Cli.print(s.name);
-		Cli.print(l.length+" libraries found");
+		var list = doSearch(haxelib, word);
+		for (l in list) {
+			Cli.print(l.name);
+		}
+		Cli.print(list.length+" libraries found");
+	}
+
+	public static function doSearch (haxelib:Main, word:String) {
+		return haxelib.site.search(word);
 	}
 }

@@ -13,11 +13,17 @@ class DeleteRepo implements Command {
 	public var net : Bool = false;
 
 	public function run (haxelib:Main) : Void {
+		var r = doDeleteRepo();
+		if (r.success)
+			Cli.print('Local repository deleted (${r.path})');
+		else
+			Cli.print('No local repository found (${r.path})');
+	}
+
+	public static function doDeleteRepo () : { path:String, success:Bool} {
 		var path = #if (haxe_ver >= 3.2) FileSystem.absolutePath(Main.REPODIR) #else Main.REPODIR #end;
 		var deleted = FsUtils.deleteRec(path);
-		if (deleted)
-			Cli.print('Local repository deleted ($path)');
-		else
-			Cli.print('No local repository found ($path)');
+
+		return { path: path, success: deleted };
 	}
 }

@@ -24,8 +24,6 @@ package haxelib.client;
 import sys.FileSystem;
 import sys.io.File;
 
-using haxelib.client.Vcs;
-
 interface IVcs {
 	var name(default, null):String;
 	var directory(default, null):String;

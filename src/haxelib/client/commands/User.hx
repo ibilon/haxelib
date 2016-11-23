@@ -12,7 +12,7 @@ class User implements Command {
 
 	public function run (haxelib:Main) : Void {
 		var uname = haxelib.cli.param("User name");
-		var inf = haxelib.site.user(uname);
+		var inf = getUser(haxelib, uname);
 		Cli.print("Id: "+inf.name);
 		Cli.print("Name: "+inf.fullname);
 		Cli.print("Mail: "+inf.email);
@@ -21,5 +21,9 @@ class User implements Command {
 			Cli.print("  (no libraries)");
 		for( p in inf.projects )
 			Cli.print("  "+p);
+	}
+
+	public static function getUser (haxelib:Main, user:String) {
+		return haxelib.site.user(user);
 	}
 }

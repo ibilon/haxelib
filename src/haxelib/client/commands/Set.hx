@@ -10,6 +10,12 @@ class Set implements Command {
 	public var net : Bool = false;
 
 	public function run (haxelib:Main) : Void {
-		haxelib.setCurrent(haxelib.getRepository(), haxelib.cli.param("Library"), haxelib.cli.param("Version"), false);
+		var library = haxelib.cli.param("Library");
+		var version = haxelib.cli.param("Version");
+		doSet(haxelib, library, version);
+	}
+
+	public static function doSet (haxelib:Main, library:String, version:String) {
+		haxelib.setCurrent(haxelib.getRepository(), library, version, false);
 	}
 }

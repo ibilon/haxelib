@@ -11,7 +11,17 @@ class Hg implements Command {
 	public var net : Bool = true;
 
 	public function run (haxelib:Main) : Void {
+		var library = haxelib.cli.param("Library name");
+		var url = haxelib.cli.param("Mercurial path");
+		var branch = haxelib.cli.paramOpt();
+		var subDir = haxelib.cli.paramOpt();
+		var version = haxelib.cli.paramOpt();
+
+		doHg(haxelib, library, url, branch, subDir, version);
+	}
+
+	public static function doHg (haxelib:Main, library:String, url:String, branch:String, subDir:String, version:String) : Void {
 		var rep = haxelib.getRepository();
-		Vcs.useVcs(haxelib, VcsID.Hg, function(vcs) Vcs.doVcsInstall(haxelib, rep, vcs, haxelib.cli.param("Library name"), haxelib.cli.param(vcs.name + " path"), haxelib.cli.paramOpt(), haxelib.cli.paramOpt(), haxelib.cli.paramOpt()));
+		Vcs.useVcs(haxelib, VcsID.Hg, function(vcs) Vcs.doVcsInstall(haxelib, rep, vcs, library, url, branch, subDir, version));
 	}
 }

@@ -14,13 +14,13 @@ class Run implements Command {
 	public var net : Bool = false;
 
 	public function run (haxelib:Main) : Void {
-		var rep = haxelib.getRepository();
 		var project = haxelib.cli.param("Library");
 		var temp = project.split(":");
-		doRun(haxelib, rep, temp[0], temp[1]);
+		doRun(haxelib, temp[0], temp[1]);
 	}
 
-	public static function doRun (haxelib:Main, rep:String, project:String, version:String ) {
+	public static function doRun (haxelib:Main, project:String, version:String ) {
+		var rep = haxelib.getRepository();
 		var pdir = rep + Data.safe(project);
 		if( !FileSystem.exists(pdir) )
 			throw "Library "+project+" is not installed";

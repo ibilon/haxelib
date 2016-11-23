@@ -13,21 +13,23 @@ class Register implements Command {
 	public var net : Bool = true;
 
 	public function run (haxelib:Main) : Void {
-		doRegister(haxelib, haxelib.cli.param("User"));
+		var name = haxelib.cli.param("User");
+		var email = haxelib.cli.param("Email");
+		var fullname = haxelib.cli.param("Fullname");
+		var pass = haxelib.cli.param("Password", true);
+		var pass2 = haxelib.cli.param("Confirm", true);
+		if (pass != pass2) {
+			Cli.print("Password does not match");
+			Sys.exit(1);
+		}
+
+		doRegister(haxelib, name, pass, email, fullname);
 		Cli.print("Registration successful");
 	}
 
-	public static function doRegister (haxelib:Main, name:String) {
-		var param = haxelib.cli.param;
-
-		var email = param("Email");
-		var fullname = param("Fullname");
-		var pass = param("Password", true);
-		var pass2 = param("Confirm", true);
-		if (pass != pass2)
-			throw "Password does not match";
+	public static function doRegister (haxelib:Main, name:String, pass:String, email:String, fullname:String) {
 		pass = Md5.encode(pass);
-		haxelib.site.register(name,pass,email,fullname);
+		haxelib.site.register(name, pass, email, fullname);
 		return pass;
 	}
 }

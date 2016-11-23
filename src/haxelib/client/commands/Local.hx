@@ -10,6 +10,11 @@ class Local implements Command {
 	public var net : Bool = false;
 
 	public function run (haxelib:Main) : Void {
-		Install.doInstallFile(haxelib, haxelib.getRepository(), haxelib.cli.param("Package"), true, true);
+		var file = haxelib.cli.param("Package");
+		doLocal(haxelib, file);
+	}
+
+	public static function doLocal (haxelib:Main, file:String) {
+		Install.doInstallFile(haxelib, haxelib.getRepository(), file, true, true);
 	}
 }
